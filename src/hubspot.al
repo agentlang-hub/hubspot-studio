@@ -3,7 +3,7 @@ module hubspot
 import "resolver.js" @as hsr
 
 entity Contact {
-    id String @id,
+    id String @id @default(uuid()),
     created_date String @optional,
     first_name String @optional,
     last_name String @optional,
@@ -31,9 +31,11 @@ entity Company {
     description String @optional,
     country String @optional,
     city String @optional,
+    lead_status String @optional,
+    lifecycle_stage String @optional,
+    owner String @optional,
     year_founded String @optional,
     website_url String @optional,
-    owner String @optional,
     properties Map @optional,
     createdAt String @optional,
     updatedAt String @optional,
@@ -41,16 +43,17 @@ entity Company {
 }
 
 entity Deal {
-    id String @id,
+    id String @id @default(uuid()),
     created_date String @optional,
     deal_name String @optional,
     deal_stage String @optional,
     amount String @optional,
     close_date String @optional,
     deal_type String @optional,
+    description String @optional,
+    owner String @optional,
     pipeline String @optional,
     priority String @optional,
-    owner String @optional,
     properties Map @optional,
     createdAt String @optional,
     updatedAt String @optional,
@@ -58,18 +61,18 @@ entity Deal {
 }
 
 entity Owner {
-    id String @id,
+    id String @id @default(uuid()),
     email String @optional,
     first_name String @optional,
     last_name String @optional,
-    user_id String @optional,
+    user_id Int @optional,
     created_at String @optional,
     updated_at String @optional,
     archived Boolean @optional
 }
 
 entity Task {
-    id String @id,
+    id String @id @default(uuid()),
     created_date String @optional,
     task_type String @optional,
     title String @optional,
@@ -85,7 +88,7 @@ entity Task {
     archived Boolean @optional
 }
 
-resolver hubspot_contact [hubspot/Contact] {
+resolver hubspot1 [hubspot/Contact] {
     create hsr.createContact,
     query hsr.queryContact,
     update hsr.updateContact,
@@ -93,7 +96,7 @@ resolver hubspot_contact [hubspot/Contact] {
     subscribe hsr.subsContacts
 }
 
-resolver hubspot_company [hubspot/Company] {
+resolver hubspot2 [hubspot/Company] {
     create hsr.createCompany,
     query hsr.queryCompany,
     update hsr.updateCompany,
@@ -101,7 +104,7 @@ resolver hubspot_company [hubspot/Company] {
     subscribe hsr.subsCompanies
 }
 
-resolver hubspot_deal [hubspot/Deal] {
+resolver hubspot3 [hubspot/Deal] {
     create hsr.createDeal,
     query hsr.queryDeal,
     update hsr.updateDeal,
@@ -109,12 +112,15 @@ resolver hubspot_deal [hubspot/Deal] {
     subscribe hsr.subsDeals
 }
 
-resolver hubspot_owner [hubspot/Owner] {
+resolver hubspot4 [hubspot/Owner] {
+    create hsr.createOwner,
     query hsr.queryOwner,
+    update hsr.updateOwner,
+    delete hsr.deleteOwner,
     subscribe hsr.subsOwners
 }
 
-resolver hubspot_task [hubspot/Task] {
+resolver hubspot5 [hubspot/Task] {
     create hsr.createTask,
     query hsr.queryTask,
     update hsr.updateTask,
@@ -123,20 +129,18 @@ resolver hubspot_task [hubspot/Task] {
 }
 
 agent hubspotAgent {
-    llm "default",
+    llm "ticketflow_llm",
     role "You are an app responsible for managing HubSpot CRM data including contacts, companies, deals, owners, and tasks."
     instruction "You are an app responsible for managing HubSpot CRM data. You can create, read, update, and delete:
                     - Contacts: Customer contact information and details
                     - Companies: Business account information
                     - Deals: Sales opportunities and pipeline management
-                    - Owners: HubSpot user accounts (read-only via API)
+                    - Owners: HubSpot user accounts and team members
                     - Tasks: Activities and follow-up items
-
-                    Use the appropriate tool based on the entity type and operation requested.
+                    
+                    Use the appropriate tool based on the entity type and operation requested. 
                     For queries, you can search by ID or retrieve all records.
                     For updates, provide the entity ID and the fields to update.
-                    For deletions, provide the entity ID to remove.
-
-                    Note: Owners can only be queried, not created or modified, as they represent HubSpot user accounts.",
+                    For deletions, provide the entity ID to remove.",
     tools [hubspot/Contact, hubspot/Company, hubspot/Deal, hubspot/Owner, hubspot/Task]
 }
