@@ -1,9 +1,6 @@
 // Import agentlang modules
-const al_module = await import('agentlang/out/runtime/module.js')
-const auth_module = await import('agentlang/out/runtime/auth/defs.js')
-
-const makeInstance = al_module.makeInstance
-const getLocalEnv = auth_module.getLocalEnv
+import { makeInstance } from 'agentlang/out/runtime/module.js'
+import { getLocalEnv } from 'agentlang/out/runtime/auth/defs.js'
 
 function asInstance(entity, entityType) {
     const instanceMap = new Map(Object.entries(entity))
