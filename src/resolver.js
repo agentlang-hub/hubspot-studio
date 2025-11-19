@@ -1,6 +1,29 @@
 // HubSpot Studio Resolver - Browser-compatible with Skypack CDN dependencies
 import axios from 'https://cdn.skypack.dev/axios';
-import { asInstance } from 'https://cdn.skypack.dev/agentlang';
+
+// AgentLang Instance Wrapper
+// Dynamically import makeInstance when needed
+let makeInstanceFn = null;
+
+async function initMakeInstance() {
+    if (!makeInstanceFn && typeof window !== 'undefined' && window.agentlang) {
+        try {
+            const module = await import('agentlang/out/runtime/module.js');
+            makeInstanceFn = module.makeInstance;
+        } catch (error) {
+            console.error('Failed to load agentlang module:', error);
+        }
+    }
+}
+
+function asInstance(entity, entityType) {
+    if (!makeInstanceFn) {
+        console.error('makeInstance not initialized. Call initMakeInstance() first.');
+        return entity;
+    }
+    const instanceMap = new Map(Object.entries(entity));
+    return makeInstanceFn('hubspot', entityType, instanceMap);
+}
 
 // Browser Configuration Management
 const BrowserConfig = {
@@ -679,7 +702,11 @@ export async function subsTasks(resolver) {
 // CONFIGURATION INITIALIZATION
 // ============================================================================
 
-export function initializeHubSpotConfig(config) {
+export async function initializeHubSpotConfig(config) {
+    // Initialize makeInstance function
+    await initMakeInstance();
+
+    // Set configuration
     if (config && typeof config === 'object') {
         Object.entries(config).forEach(([key, value]) => {
             BrowserConfig.set(key, value);
