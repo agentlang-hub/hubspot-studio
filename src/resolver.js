@@ -1028,14 +1028,13 @@ export const createMeeting = async (env, attributes) => {
 
   const data = { properties };
 
-  // Validate required fields for HubSpot UI visibility
+  // Validate required fields for meeting creation
   const requiredFields = {
     hs_timestamp: properties.hs_timestamp,
     hs_meeting_title: properties.hs_meeting_title,
     hs_meeting_outcome: properties.hs_meeting_outcome,
     hs_meeting_start_time: properties.hs_meeting_start_time,
     hs_meeting_end_time: properties.hs_meeting_end_time,
-    hubspot_owner_id: properties.hubspot_owner_id,
   };
 
   const missingFields = Object.entries(requiredFields)
@@ -1043,9 +1042,14 @@ export const createMeeting = async (env, attributes) => {
     .map(([key]) => key);
 
   if (missingFields.length > 0) {
-    const error = `Missing required fields for HubSpot UI visibility: ${missingFields.join(", ")}`;
+    const error = `Missing required fields for meeting creation: ${missingFields.join(", ")}`;
     console.error("HUBSPOT RESOLVER:", error);
     return { result: "error", message: error };
+  }
+
+  // Warn if owner is missing (reduces UI visibility but doesn't prevent creation)
+  if (!properties.hubspot_owner_id) {
+    console.warn("HUBSPOT RESOLVER: Meeting created without owner - may have reduced UI visibility");
   }
 
   try {
