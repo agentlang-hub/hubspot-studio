@@ -1120,6 +1120,18 @@ export const createMeeting = async (env, attributes) => {
     console.log(
       `HUBSPOT RESOLVER: Successfully created meeting ${meetingId}${associations.length > 0 ? ` with ${associations.length} associations` : ""}`,
     );
+    console.log("HUBSPOT RESOLVER: Full meeting creation response:", JSON.stringify(result, null, 2));
+
+    // Verify associations were created
+    if (associations.length > 0) {
+      console.log("HUBSPOT RESOLVER: Verifying associations were created...");
+      try {
+        const verifyResult = await makeGetRequest(`/crm/v3/objects/meetings/${meetingId}/associations/contacts`);
+        console.log("HUBSPOT RESOLVER: Meeting associations verification:", JSON.stringify(verifyResult, null, 2));
+      } catch (verifyError) {
+        console.error("HUBSPOT RESOLVER: Failed to verify associations:", verifyError);
+      }
+    }
 
     return { result: "success", id: meetingId };
   } catch (error) {
