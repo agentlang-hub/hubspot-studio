@@ -809,7 +809,7 @@ export async function subsOwners(resolver) {
   }, intervalMs);
 }
 
-export async function subtasks(resolver) {
+export async function subsTasks(resolver) {
   await handleSubsTasks(resolver);
   const intervalMinutes =
     parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
