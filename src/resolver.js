@@ -619,7 +619,18 @@ export const queryOwner = async (env, attrs) => {
     console.log(`HUBSPOT RESOLVER: Found ${inst.length} owners`);
 
     return inst.map((data) => {
-      return asInstance(data, "Owner");
+      // Transform HubSpot API response (camelCase) to AgentLang entity schema (snake_case)
+      const transformed = {
+        id: data.id,
+        email: data.email,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        user_id: data.userId,
+        created_at: data.createdAt,
+        updated_at: data.updatedAt,
+        archived: data.archived
+      };
+      return asInstance(transformed, "Owner");
     });
   } catch (error) {
     console.error(`HUBSPOT RESOLVER: Failed to query owners: ${error}`);
