@@ -2,5 +2,10 @@
   "name": "hubspot-studio",
   "version": "0.0.1",
   "type": "module",
-  "description": "Browser-compatible HubSpot resolver for agentlang"
+  "description": "Browser-compatible HubSpot resolver for agentlang",
+  "agentlang": {
+    "config": [
+      "hubspot/HubSpotConfig"
+    ]
+  }
 }

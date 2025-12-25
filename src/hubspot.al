@@ -2,6 +2,18 @@ module hubspot
 
 import "resolver.js" @as hsr
 
+entity HubSpotConfig {
+    id UUID @id @default(uuid()),
+    accessToken String,
+    corsProxyUrl String @optional,
+    apiTimeout Int @optional,
+    pollIntervalMinutes Int @optional,
+    searchResultLimit Int @optional,
+    name String @optional,
+    description String @optional,
+    active Boolean @optional
+}
+
 entity Contact {
     id String @id @default(uuid()),
     created_date String @optional,
