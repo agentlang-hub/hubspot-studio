@@ -1,5 +1,5 @@
 {
-  "name": "hubspot-studio",
+  "name": "hubspot",
   "version": "0.0.1",
   "type": "module",
   "description": "Browser-compatible HubSpot resolver for agentlang",
