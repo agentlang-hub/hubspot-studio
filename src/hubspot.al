@@ -103,6 +103,7 @@ entity Task {
 
 entity Meeting {
     id String @id @default(uuid()),
+    meeting_date String @optional,
     timestamp String @optional,
     meeting_title String @optional,
     owner String @optional,
