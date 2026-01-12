@@ -1134,6 +1134,9 @@ const isoToUnixMs = (isoDate) => {
 
 // Meeting functions
 export const createMeeting = async (env, attributes) => {
+    console.log("========== HUBSPOT RESOLVER: createMeeting called ==========");
+    console.log("HUBSPOT RESOLVER: All attributes:", Array.from(attributes.attributes.entries()));
+
     // Get the meeting date (could be ISO 8601 or already Unix milliseconds)
     const meetingDate = attributes.attributes.get("meeting_date");
     const timestamp = attributes.attributes.get("timestamp");
@@ -1376,9 +1379,12 @@ export const createMeeting = async (env, attributes) => {
             }
         }
 
+        console.log("HUBSPOT RESOLVER: Successfully created meeting with ID:", meetingId);
+        console.log("HUBSPOT RESOLVER: Returning success result");
         return { result: "success", id: meetingId };
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create meeting: ${error}`);
+        console.error(`HUBSPOT RESOLVER: Error stack:`, error.stack);
         return { result: "error", message: error.message };
     }
 };
