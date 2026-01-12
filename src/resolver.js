@@ -1183,6 +1183,15 @@ export const createMeeting = async (env, attributes) => {
         calculatedEndTime = String(parseInt(calculatedStartTime) + 3600000);
     }
 
+    console.log("HUBSPOT RESOLVER: Meeting time calculation:");
+    console.log("  - Input meeting_date:", meetingDate);
+    console.log("  - Input timestamp:", timestamp);
+    console.log("  - Input start_time:", startTime);
+    console.log("  - Input end_time:", endTime);
+    console.log("  - Calculated timestamp:", calculatedTimestamp);
+    console.log("  - Calculated start_time:", calculatedStartTime);
+    console.log("  - Calculated end_time:", calculatedEndTime);
+
     // Build properties object, filtering out undefined/null values
     const rawProperties = {
         hs_timestamp: calculatedTimestamp,
@@ -1264,8 +1273,8 @@ export const createMeeting = async (env, attributes) => {
                 typeof associatedContacts === "string"
                     ? associatedContacts.split(",").map((id) => id.trim())
                     : Array.isArray(associatedContacts)
-                      ? associatedContacts
-                      : [associatedContacts];
+                        ? associatedContacts
+                        : [associatedContacts];
 
             contactIds.forEach((contactId) => {
                 associations.push({
@@ -1287,8 +1296,8 @@ export const createMeeting = async (env, attributes) => {
                 typeof associatedCompanies === "string"
                     ? associatedCompanies.split(",").map((id) => id.trim())
                     : Array.isArray(associatedCompanies)
-                      ? associatedCompanies
-                      : [associatedCompanies];
+                        ? associatedCompanies
+                        : [associatedCompanies];
 
             companyIds.forEach((companyId) => {
                 associations.push({
@@ -1310,8 +1319,8 @@ export const createMeeting = async (env, attributes) => {
                 typeof associatedDeals === "string"
                     ? associatedDeals.split(",").map((id) => id.trim())
                     : Array.isArray(associatedDeals)
-                      ? associatedDeals
-                      : [associatedDeals];
+                        ? associatedDeals
+                        : [associatedDeals];
 
             dealIds.forEach((dealId) => {
                 associations.push({
