@@ -1001,6 +1001,11 @@ async function handleSubsTasks(resolver) {
     await getAndProcessRecords(resolver, "tasks");
 }
 
+async function handleSubsNotes(resolver) {
+    console.log("HUBSPOT RESOLVER: Fetching notes for subscription...");
+    await getAndProcessRecords(resolver, "notes");
+}
+
 export async function subsContacts(resolver) {
     await handleSubsContacts(resolver);
     const intervalMinutes =
@@ -1454,7 +1459,18 @@ export const deleteNote = async (env, attributes) => {
     }
 };
 
-export const subsNotes = subscriptionFactory("notes", "Note");
+export async function subsNotes(resolver) {
+    await handleSubsNotes(resolver);
+    const intervalMinutes =
+        parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
+    const intervalMs = intervalMinutes * 60 * 1000;
+    console.log(
+        `HUBSPOT RESOLVER: Setting notes polling interval to ${intervalMinutes} minutes`,
+    );
+    setInterval(async () => {
+        await handleSubsNotes(resolver);
+    }, intervalMs);
+}
 
 // Meeting functions
 export const createMeeting = async (env, attributes) => {
