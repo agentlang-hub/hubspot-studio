@@ -29,6 +29,7 @@ entity Contact {
     mobile_phone_number String @optional,
     website_url String @optional,
     owner String @optional,
+    company String @optional,
     properties Map @optional,
     createdAt String @optional,
     updatedAt String @optional,
@@ -40,12 +41,14 @@ entity Company {
     id String @id,
     created_date String @optional,
     name String @optional,
+    domain String @optional,
     industry String @optional,
     description String @optional,
     country String @optional,
     city String @optional,
     lead_status String @optional,
     lifecycle_stage String @optional,
+    ai_lead_score Int @optional,
     owner String @optional,
     year_founded String @optional,
     website_url String @optional,
@@ -67,6 +70,8 @@ entity Deal {
     owner String @optional,
     pipeline String @optional,
     priority String @optional,
+    associated_company String @optional,
+    associated_contacts String @optional,
     properties Map @optional,
     createdAt String @optional,
     updatedAt String @optional,
@@ -95,6 +100,9 @@ entity Task {
     status String @optional,
     description String @optional,
     owner String @optional,
+    associated_contact String @optional,
+    associated_company String @optional,
+    associated_deal String @optional,
     properties Map @optional,
     createdAt String @optional,
     updatedAt String @optional,
@@ -119,6 +127,21 @@ entity Meeting {
     associated_contacts String @optional,
     associated_companies String @optional,
     associated_deals String @optional,
+    properties Map @optional,
+    createdAt String @optional,
+    updatedAt String @optional,
+    archived Boolean @optional
+}
+
+entity Note {
+    id String @id @default(uuid()),
+    created_date String @optional,
+    note_body String @optional,
+    owner String @optional,
+    associated_contact String @optional,
+    associated_contacts String @optional,
+    associated_company String @optional,
+    associated_deal String @optional,
     properties Map @optional,
     createdAt String @optional,
     updatedAt String @optional,
@@ -195,27 +218,36 @@ resolver hubspot6 [hubspot/Meeting] {
     subscribe hsr.subsMeetings
 }
 
-resolver hubspot7 [hubspot/MeetingAssociation] {
+resolver hubspot7 [hubspot/Note] {
+    create hsr.createNote,
+    query hsr.queryNote,
+    update hsr.updateNote,
+    delete hsr.deleteNote,
+    subscribe hsr.subsNotes
+}
+
+resolver hubspot8 [hubspot/MeetingAssociation] {
     create hsr.associateMeeting
 }
 
-resolver hubspot8 [hubspot/MeetingDisassociation] {
+resolver hubspot9 [hubspot/MeetingDisassociation] {
     create hsr.disassociateMeeting
 }
 
-resolver hubspot9 [hubspot/MeetingAssociationQuery] {
+resolver hubspot10 [hubspot/MeetingAssociationQuery] {
     query hsr.getMeetingAssociationsResolver
 }
 
 agent hubspotAgent {
     llm "ticketflow_llm",
-    role "You are an app responsible for managing HubSpot CRM data including contacts, companies, deals, owners, tasks, and meetings with full association support."
+    role "You are an app responsible for managing HubSpot CRM data including contacts, companies, deals, owners, tasks, notes, and meetings with full association support."
     instruction "You are an app responsible for managing HubSpot CRM data. You can create, read, update, and delete:
                     - Contacts: Customer contact information and details
                     - Companies: Business account information
                     - Deals: Sales opportunities and pipeline management
                     - Owners: HubSpot user accounts and team members
                     - Tasks: Activities and follow-up items
+                    - Notes: Notes attached to contacts, companies, or deals
                     - Meetings: Meeting engagements with scheduling and outcome tracking
 
                     For meetings, you can also manage associations:
@@ -224,9 +256,11 @@ agent hubspotAgent {
                     - Use MeetingDisassociation to remove associations
                     - Use MeetingAssociationQuery to query existing associations
 
+                    For notes, you can associate them with contacts, companies, or deals by providing IDs in associated_contact, associated_company, or associated_deal fields.
+
                     Use the appropriate tool based on the entity type and operation requested.
                     For queries, you can search by ID or retrieve all records.
                     For updates, provide the entity ID and the fields to update.
                     For deletions, provide the entity ID to remove.",
-    tools [hubspot/Contact, hubspot/Company, hubspot/Deal, hubspot/Owner, hubspot/Task, hubspot/Meeting, hubspot/MeetingAssociation, hubspot/MeetingDisassociation, hubspot/MeetingAssociationQuery]
+    tools [hubspot/Contact, hubspot/Company, hubspot/Deal, hubspot/Owner, hubspot/Task, hubspot/Note, hubspot/Meeting, hubspot/MeetingAssociation, hubspot/MeetingDisassociation, hubspot/MeetingAssociationQuery]
 }

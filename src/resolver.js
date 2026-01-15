@@ -25,6 +25,7 @@ const FIELD_MAPPINGS = {
     },
     Company: {
         name: "name",
+        domain: "domain",
         industry: "industry",
         description: "description",
         country: "country",
@@ -74,6 +75,10 @@ const FIELD_MAPPINGS = {
         first_name: "firstName",
         last_name: "lastName",
         user_id: "userId",
+    },
+    Note: {
+        note_body: "hs_note_body",
+        owner: "hubspot_owner_id",
     },
 };
 
@@ -331,6 +336,9 @@ const makePutRequest = async (endpoint, body = null) => {
 
 // Contact functions
 export const createContact = async (env, attributes) => {
+    console.log("========== HUBSPOT RESOLVER: createContact called ==========");
+    console.log("HUBSPOT RESOLVER: All attributes:", Array.from(attributes.attributes.entries()));
+
     const data = {
         properties: {
             firstname: attributes.attributes.get("first_name"),
@@ -348,9 +356,29 @@ export const createContact = async (env, attributes) => {
         },
     };
 
+    // Handle company association (Type ID: 279 for contact_to_company)
+    const associatedCompany = attributes.attributes.get("company");
+    
+    console.log("HUBSPOT RESOLVER: Contact association attributes:");
+    console.log("  - company:", associatedCompany);
+
+    if (associatedCompany) {
+        console.log(`HUBSPOT RESOLVER: Associating contact with company: ${associatedCompany}`);
+        data.associations = [{
+            to: { id: associatedCompany },
+            types: [{
+                associationCategory: "HUBSPOT_DEFINED",
+                associationTypeId: 279
+            }]
+        }];
+    }
+
+    console.log("HUBSPOT RESOLVER: Contact creation request:", JSON.stringify(data, null, 2));
+
     try {
         const result = await makePostRequest("/crm/v3/objects/contacts", data);
-        return { result: "success", id: result.id };
+        console.log("HUBSPOT RESOLVER: Contact created successfully:", result.id);
+        return asInstance(result, "Contact");
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create contact: ${error}`);
         return { result: "error", message: error.message };
@@ -422,12 +450,14 @@ export const createCompany = async (env, attributes) => {
     const data = {
         properties: {
             name: attributes.attributes.get("name"),
+            domain: attributes.attributes.get("domain"),
             industry: attributes.attributes.get("industry"),
             description: attributes.attributes.get("description"),
             country: attributes.attributes.get("country"),
             city: attributes.attributes.get("city"),
             hs_lead_status: attributes.attributes.get("lead_status"),
             lifecyclestage: attributes.attributes.get("lifecycle_stage"),
+            ai_lead_score: attributes.attributes.get("ai_lead_score"),
             hubspot_owner_id: attributes.attributes.get("owner"),
             founded_year: attributes.attributes.get("year_founded"),
             website: attributes.attributes.get("website_url"),
@@ -459,12 +489,14 @@ export const updateCompany = async (env, attributes, newAttrs) => {
     const data = {
         properties: {
             name: newAttrs.get("name"),
+            domain: newAttrs.get("domain"),
             industry: newAttrs.get("industry"),
             description: newAttrs.get("description"),
             country: newAttrs.get("country"),
             city: newAttrs.get("city"),
             hs_lead_status: newAttrs.get("lead_status"),
             lifecyclestage: newAttrs.get("lifecycle_stage"),
+            ai_lead_score: newAttrs.get("ai_lead_score"),
             hubspot_owner_id: newAttrs.get("owner"),
             founded_year: newAttrs.get("year_founded"),
             website: newAttrs.get("website_url"),
@@ -503,6 +535,9 @@ export const deleteCompany = async (env, attributes) => {
 
 // Deal functions
 export const createDeal = async (env, attributes) => {
+    console.log("========== HUBSPOT RESOLVER: createDeal called ==========");
+    console.log("HUBSPOT RESOLVER: All attributes:", Array.from(attributes.attributes.entries()));
+
     const data = {
         properties: {
             dealname: attributes.attributes.get("deal_name"),
@@ -517,9 +552,58 @@ export const createDeal = async (env, attributes) => {
         },
     };
 
+    // Handle associations (Deal to Company, Deal to Contact)
+    const associatedCompany = attributes.attributes.get("associated_company");
+    const associatedContacts = attributes.attributes.get("associated_contacts");
+    
+    console.log("HUBSPOT RESOLVER: Deal association attributes:");
+    console.log("  - associated_company:", associatedCompany);
+    console.log("  - associated_contacts:", associatedContacts);
+
+    if (associatedCompany || associatedContacts) {
+        data.associations = [];
+
+        // Associate with company (Type ID: 341 for deal_to_company)
+        if (associatedCompany) {
+            console.log(`HUBSPOT RESOLVER: Associating deal with company: ${associatedCompany}`);
+            data.associations.push({
+                to: { id: associatedCompany },
+                types: [{
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 341
+                }]
+            });
+        }
+
+        // Associate with contacts (Type ID: 3 for deal_to_contact)
+        if (associatedContacts) {
+            const contactIds = typeof associatedContacts === "string"
+                ? associatedContacts.split(",").map((id) => id.trim())
+                : Array.isArray(associatedContacts)
+                    ? associatedContacts
+                    : [associatedContacts];
+
+            console.log(`HUBSPOT RESOLVER: Associating deal with ${contactIds.length} contacts`);
+            for (const contactId of contactIds) {
+                if (contactId) {
+                    data.associations.push({
+                        to: { id: contactId.toString() },
+                        types: [{
+                            associationCategory: "HUBSPOT_DEFINED",
+                            associationTypeId: 3
+                        }]
+                    });
+                }
+            }
+        }
+    }
+
+    console.log("HUBSPOT RESOLVER: Deal creation request:", JSON.stringify(data, null, 2));
+
     try {
         const result = await makePostRequest("/crm/v3/objects/deals", data);
-        return { result: "success", id: result.id };
+        console.log("HUBSPOT RESOLVER: Deal created successfully:", result.id);
+        return asInstance(result, "Deal");
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create deal: ${error}`);
         return { result: "error", message: error.message };
@@ -707,6 +791,9 @@ export const deleteOwner = async (env, attributes) => {
 
 // Task functions
 export const createTask = async (env, attributes) => {
+    console.log("========== HUBSPOT RESOLVER: createTask called ==========");
+    console.log("HUBSPOT RESOLVER: All attributes:", Array.from(attributes.attributes.entries()));
+
     const data = {
         properties: {
             hs_task_type: attributes.attributes.get("task_type"),
@@ -720,9 +807,62 @@ export const createTask = async (env, attributes) => {
         },
     };
 
+    // Handle associations (Task to Contact, Company, Deal)
+    const associatedContact = attributes.attributes.get("associated_contact");
+    const associatedCompany = attributes.attributes.get("associated_company");
+    const associatedDeal = attributes.attributes.get("associated_deal");
+    
+    console.log("HUBSPOT RESOLVER: Task association attributes:");
+    console.log("  - associated_contact:", associatedContact);
+    console.log("  - associated_company:", associatedCompany);
+    console.log("  - associated_deal:", associatedDeal);
+
+    if (associatedContact || associatedCompany || associatedDeal) {
+        data.associations = [];
+
+        // Associate with contact (Type ID: 204 for task_to_contact)
+        if (associatedContact) {
+            console.log(`HUBSPOT RESOLVER: Associating task with contact: ${associatedContact}`);
+            data.associations.push({
+                to: { id: associatedContact },
+                types: [{
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 204
+                }]
+            });
+        }
+
+        // Associate with company (Type ID: 192 for task_to_company)
+        if (associatedCompany) {
+            console.log(`HUBSPOT RESOLVER: Associating task with company: ${associatedCompany}`);
+            data.associations.push({
+                to: { id: associatedCompany },
+                types: [{
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 192
+                }]
+            });
+        }
+
+        // Associate with deal (Type ID: 216 for task_to_deal)
+        if (associatedDeal) {
+            console.log(`HUBSPOT RESOLVER: Associating task with deal: ${associatedDeal}`);
+            data.associations.push({
+                to: { id: associatedDeal },
+                types: [{
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 216
+                }]
+            });
+        }
+    }
+
+    console.log("HUBSPOT RESOLVER: Task creation request:", JSON.stringify(data, null, 2));
+
     try {
         const result = await makePostRequest("/crm/v3/objects/tasks", data);
-        return { result: "success", id: result.id };
+        console.log("HUBSPOT RESOLVER: Task created successfully:", result.id);
+        return asInstance(result, "Task");
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create task: ${error}`);
         return { result: "error", message: error.message };
@@ -1131,6 +1271,190 @@ const getMeetingAssociations = async (meetingId, toObjectType) => {
 const isoToUnixMs = (isoDate) => {
     return String(new Date(isoDate).getTime());
 };
+
+// Note functions
+export const createNote = async (env, attributes) => {
+    console.log("========== HUBSPOT RESOLVER: createNote called ==========");
+    console.log("HUBSPOT RESOLVER: All attributes:", Array.from(attributes.attributes.entries()));
+
+    const data = {
+        properties: {
+            hs_note_body: attributes.attributes.get("note_body"),
+            hubspot_owner_id: attributes.attributes.get("owner"),
+        },
+    };
+
+    try {
+        const result = await makePostRequest("/crm/v3/objects/notes", data);
+        console.log("HUBSPOT RESOLVER: Note created successfully:", result.id);
+
+        const noteId = result.id;
+
+        // Handle associations
+        const associatedContact = attributes.attributes.get("associated_contact");
+        const associatedContacts = attributes.attributes.get("associated_contacts");
+        const associatedCompany = attributes.attributes.get("associated_company");
+        const associatedDeal = attributes.attributes.get("associated_deal");
+
+        console.log("HUBSPOT RESOLVER: Note association attributes:");
+        console.log("  - associated_contact:", associatedContact);
+        console.log("  - associated_contacts:", associatedContacts);
+        console.log("  - associated_company:", associatedCompany);
+        console.log("  - associated_deal:", associatedDeal);
+
+        // Create note associations (similar to Meeting pattern)
+        if (associatedContact) {
+            console.log(`HUBSPOT RESOLVER: Associating note with contact: ${associatedContact}`);
+            await createNoteAssociation(noteId, "contacts", associatedContact);
+        }
+
+        if (associatedContacts) {
+            const contactIds =
+                typeof associatedContacts === "string"
+                    ? associatedContacts.split(",").map((id) => id.trim())
+                    : Array.isArray(associatedContacts)
+                        ? associatedContacts
+                        : [associatedContacts];
+
+            console.log(`HUBSPOT RESOLVER: Associating note with ${contactIds.length} contacts`);
+            await createNoteAssociations(noteId, { contacts: contactIds });
+        }
+
+        if (associatedCompany) {
+            console.log(`HUBSPOT RESOLVER: Associating note with company: ${associatedCompany}`);
+            await createNoteAssociation(noteId, "companies", associatedCompany);
+        }
+
+        if (associatedDeal) {
+            console.log(`HUBSPOT RESOLVER: Associating note with deal: ${associatedDeal}`);
+            await createNoteAssociation(noteId, "deals", associatedDeal);
+        }
+
+        return asInstance(result, "Note");
+    } catch (error) {
+        console.error(`HUBSPOT RESOLVER: Failed to create note: ${error}`);
+        return { result: "error", message: error.message };
+    }
+};
+
+const createNoteAssociation = async (noteId, objectType, objectId) => {
+    const associationTypeIds = {
+        contacts: 202, // note_to_contact
+        companies: 190, // note_to_company
+        deals: 214, // note_to_deal
+    };
+
+    const associationTypeId = associationTypeIds[objectType];
+    if (!associationTypeId) {
+        console.error(
+            `HUBSPOT RESOLVER: Unknown note association object type: ${objectType}`,
+        );
+        return;
+    }
+
+    try {
+        console.log(
+            `HUBSPOT RESOLVER: Creating note association: note ${noteId} -> ${objectType} ${objectId} (type ${associationTypeId})`,
+        );
+        await makePutRequest(
+            `/crm/v3/objects/notes/${noteId}/associations/${objectType}/${objectId}/${associationTypeId}`,
+            {},
+        );
+        console.log(
+            `HUBSPOT RESOLVER: Successfully associated note ${noteId} with ${objectType} ${objectId}`,
+        );
+    } catch (error) {
+        console.error(
+            `HUBSPOT RESOLVER: Failed to associate note with ${objectType}: ${error}`,
+        );
+    }
+};
+
+const createNoteAssociations = async (noteId, associations) => {
+    if (associations.contacts) {
+        for (const contactId of associations.contacts) {
+            if (contactId) {
+                await createNoteAssociation(
+                    noteId,
+                    "contacts",
+                    contactId.toString(),
+                );
+            }
+        }
+    }
+
+    if (associations.companies) {
+        for (const companyId of associations.companies) {
+            if (companyId) {
+                await createNoteAssociation(
+                    noteId,
+                    "companies",
+                    companyId.toString(),
+                );
+            }
+        }
+    }
+
+    if (associations.deals) {
+        for (const dealId of associations.deals) {
+            if (dealId) {
+                await createNoteAssociation(noteId, "deals", dealId.toString());
+            }
+        }
+    }
+};
+
+export const queryNote = async (env, attrs) => {
+    return await queryWithFilters("notes", "Note", attrs);
+};
+
+export const updateNote = async (env, attributes, newAttrs) => {
+    const id = attributes.attributes.get("id");
+    if (!id) {
+        return {
+            result: "error",
+            message: "Note ID is required for update",
+        };
+    }
+
+    const data = {
+        properties: {
+            hs_note_body: newAttrs.get("note_body"),
+            hubspot_owner_id: newAttrs.get("owner"),
+        },
+    };
+
+    try {
+        const result = await makePatchRequest(
+            `/crm/v3/objects/notes/${id}`,
+            data,
+        );
+        return asInstance(result, "Note");
+    } catch (error) {
+        console.error(`HUBSPOT RESOLVER: Failed to update note: ${error}`);
+        return { result: "error", message: error.message };
+    }
+};
+
+export const deleteNote = async (env, attributes) => {
+    const id = attributes.attributes.get("id");
+    if (!id) {
+        return {
+            result: "error",
+            message: "Note ID is required for deletion",
+        };
+    }
+
+    try {
+        await makeDeleteRequest(`/crm/v3/objects/notes/${id}`);
+        return { result: "success" };
+    } catch (error) {
+        console.error(`HUBSPOT RESOLVER: Failed to delete note: ${error}`);
+        return { result: "error", message: error.message };
+    }
+};
+
+export const subsNotes = subscriptionFactory("notes", "Note");
 
 // Meeting functions
 export const createMeeting = async (env, attributes) => {
