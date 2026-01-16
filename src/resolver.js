@@ -796,39 +796,41 @@ export const createTask = async (env, attributes) => {
 
     const data = {
         properties: {
-            hs_task_type: attributes.attributes.get("task_type"),
-            hs_task_subject: attributes.attributes.get("title"),
-            hs_task_priority: attributes.attributes.get("priority"),
-            hs_task_assigned_to: attributes.attributes.get("assigned_to"),
-            hs_task_due_date: attributes.attributes.get("due_date"),
-            hs_task_status: attributes.attributes.get("status"),
-            hs_task_body: attributes.attributes.get("description"),
-            hubspot_owner_id: attributes.attributes.get("owner"),
+            hs_task_type: attributes.attributes.get("hs_task_type"),
+            hs_task_subject: attributes.attributes.get("hs_task_subject"),
+            hs_task_priority: attributes.attributes.get("hs_task_priority"),
+            hs_timestamp: attributes.attributes.get("hs_timestamp"),
+            hs_task_status: attributes.attributes.get("hs_task_status"),
+            hs_task_body: attributes.attributes.get("hs_task_body"),
+            hubspot_owner_id: attributes.attributes.get("hubspot_owner_id"),
+            hs_task_reminders: attributes.attributes.get("hs_task_reminders"),
         },
     };
 
     // Handle associations (Task to Contact, Company, Deal)
-    const associatedContact = attributes.attributes.get("associated_contact");
+    const associatedContacts = attributes.attributes.get("associated_contacts");
     const associatedCompany = attributes.attributes.get("associated_company");
     const associatedDeal = attributes.attributes.get("associated_deal");
     
     console.log("HUBSPOT RESOLVER: Task association attributes:");
-    console.log("  - associated_contact:", associatedContact);
+    console.log("  - associated_contacts:", associatedContacts);
     console.log("  - associated_company:", associatedCompany);
     console.log("  - associated_deal:", associatedDeal);
 
-    if (associatedContact || associatedCompany || associatedDeal) {
+    if (associatedContacts || associatedCompany || associatedDeal) {
         data.associations = [];
 
-        // Associate with contact (Type ID: 204 for task_to_contact)
-        if (associatedContact) {
-            console.log(`HUBSPOT RESOLVER: Associating task with contact: ${associatedContact}`);
-            data.associations.push({
-                to: { id: associatedContact },
-                types: [{
-                    associationCategory: "HUBSPOT_DEFINED",
-                    associationTypeId: 204
-                }]
+        // Associate with contacts (Type ID: 204 for task_to_contact)
+        if (associatedContacts && Array.isArray(associatedContacts)) {
+            associatedContacts.forEach(contactId => {
+                console.log(`HUBSPOT RESOLVER: Associating task with contact: ${contactId}`);
+                data.associations.push({
+                    to: { id: contactId },
+                    types: [{
+                        associationCategory: "HUBSPOT_DEFINED",
+                        associationTypeId: 204
+                    }]
+                });
             });
         }
 
@@ -881,14 +883,14 @@ export const updateTask = async (env, attributes, newAttrs) => {
 
     const data = {
         properties: {
-            hs_task_type: newAttrs.get("task_type"),
-            hs_task_subject: newAttrs.get("title"),
-            hs_task_priority: newAttrs.get("priority"),
-            hs_task_assigned_to: newAttrs.get("assigned_to"),
-            hs_task_due_date: newAttrs.get("due_date"),
-            hs_task_status: newAttrs.get("status"),
-            hs_task_body: newAttrs.get("description"),
-            hubspot_owner_id: newAttrs.get("owner"),
+            hs_task_type: newAttrs.get("hs_task_type"),
+            hs_task_subject: newAttrs.get("hs_task_subject"),
+            hs_task_priority: newAttrs.get("hs_task_priority"),
+            hs_timestamp: newAttrs.get("hs_timestamp"),
+            hs_task_status: newAttrs.get("hs_task_status"),
+            hs_task_body: newAttrs.get("hs_task_body"),
+            hubspot_owner_id: newAttrs.get("hubspot_owner_id"),
+            hs_task_reminders: newAttrs.get("hs_task_reminders"),
         },
     };
 
