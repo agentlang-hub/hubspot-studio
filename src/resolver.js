@@ -88,14 +88,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
     const id =
         attrs.queryAttributeValues?.get("__path__")?.split("/")?.pop() ?? null;
 
-    console.log(
-        `HUBSPOT RESOLVER: Querying ${objectType}: ${id || "with filters"}\n`,
-    );
-    console.log(
-        `HUBSPOT RESOLVER: Query attributes:`,
-        attrs.queryAttributeValues,
-    );
-
     try {
         let inst;
 
@@ -123,9 +115,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
                     const hubspotProperty = fieldMapping[key] || key;
 
                     if (value !== null && value !== undefined) {
-                        console.log(
-                            `HUBSPOT RESOLVER: Adding filter for ${key} (${hubspotProperty}) = ${value}`,
-                        );
                         filters.push({
                             propertyName: hubspotProperty,
                             operator: "EQ",
@@ -146,10 +135,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
                     limit: 100,
                 };
 
-                console.log(
-                    `HUBSPOT RESOLVER: Using Search API for ${objectType} with filters:`,
-                    JSON.stringify(searchBody, null, 2),
-                );
                 const result = await makePostRequest(
                     `/crm/v3/objects/${objectType}/search`,
                     searchBody,
@@ -158,9 +143,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
             }
             // No filters - get all records
             else {
-                console.log(
-                    `HUBSPOT RESOLVER: No filters, fetching all ${objectType}`,
-                );
                 const result = await makeGetRequest(
                     `/crm/v3/objects/${objectType}`,
                 );
@@ -171,8 +153,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
         if (!(inst instanceof Array)) {
             inst = [inst];
         }
-
-        console.log(`HUBSPOT RESOLVER: Found ${inst.length} ${objectType}`);
 
         return inst.map((data) => {
             return asInstance(data, entityType);
@@ -221,10 +201,6 @@ const makeRequest = async (endpoint, options = {}) => {
         },
     };
 
-    console.log(
-        `HUBSPOT RESOLVER: making http request ${options.method} ${url}`,
-    );
-
     const config = { ...defaultOptions, ...options };
 
     // Remove Content-Type header for GET requests without body
@@ -248,10 +224,6 @@ const makeRequest = async (endpoint, options = {}) => {
         });
 
         const body = await getResponseBody(response);
-        console.log(
-            `HUBSPOT RESOLVER: response ${response.status} ${response.ok}`,
-            body,
-        );
 
         clearTimeout(timeoutId);
 
@@ -295,12 +267,10 @@ const makeRequest = async (endpoint, options = {}) => {
 };
 
 const makeGetRequest = async (endpoint) => {
-    console.log(`HUBSPOT RESOLVER: Querying HubSpot: ${endpoint}\n`);
     return await makeRequest(endpoint, { method: "GET" });
 };
 
 const makePostRequest = async (endpoint, body) => {
-    console.log(`HUBSPOT RESOLVER: Creating in HubSpot: ${endpoint}\n`);
     return await makeRequest(endpoint, {
         method: "POST",
         body: JSON.stringify(body),
@@ -308,7 +278,6 @@ const makePostRequest = async (endpoint, body) => {
 };
 
 const makePatchRequest = async (endpoint, body) => {
-    console.log(`HUBSPOT RESOLVER: Updating in HubSpot: ${endpoint}\n`);
     return await makeRequest(endpoint, {
         method: "PATCH",
         body: JSON.stringify(body),
@@ -316,12 +285,10 @@ const makePatchRequest = async (endpoint, body) => {
 };
 
 const makeDeleteRequest = async (endpoint) => {
-    console.log(`HUBSPOT RESOLVER: Deleting from HubSpot: ${endpoint}\n`);
     return await makeRequest(endpoint, { method: "DELETE" });
 };
 
 const makePutRequest = async (endpoint, body = null) => {
-    console.log(`HUBSPOT RESOLVER: Putting to HubSpot: ${endpoint}\n`);
     const options = { method: "PUT" };
     if (body) {
         options.body = JSON.stringify(body);
@@ -598,12 +565,6 @@ export const queryOwner = async (env, attrs) => {
     const id =
         attrs.queryAttributeValues?.get("__path__")?.split("/")?.pop() ?? null;
 
-    console.log(`HUBSPOT RESOLVER: Querying owners: ${id || "with filters"}\n`);
-    console.log(
-        `HUBSPOT RESOLVER: Query attributes:`,
-        attrs.queryAttributeValues,
-    );
-
     try {
         let inst;
 
@@ -621,20 +582,14 @@ export const queryOwner = async (env, attrs) => {
             if (email) {
                 // Get all owners and filter by email client-side
                 // HubSpot owners API doesn't support search filters like contacts
-                console.log(
-                    `HUBSPOT RESOLVER: Fetching all owners to filter by email: ${email}`,
-                );
+
                 const result = await makeGetRequest(`/crm/v3/owners/`);
                 const allOwners = result.results || [];
 
                 // Filter by email
                 inst = allOwners.filter((owner) => owner.email === email);
-                console.log(
-                    `HUBSPOT RESOLVER: Found ${inst.length} owners matching email ${email}`,
-                );
             } else {
                 // No filters - get all owners
-                console.log(`HUBSPOT RESOLVER: Fetching all owners`);
                 const result = await makeGetRequest(`/crm/v3/owners/`);
                 inst = result.results || [];
             }
@@ -643,8 +598,6 @@ export const queryOwner = async (env, attrs) => {
         if (!(inst instanceof Array)) {
             inst = [inst];
         }
-
-        console.log(`HUBSPOT RESOLVER: Found ${inst.length} owners`);
 
         return inst.map((data) => {
             // Transform HubSpot API response (camelCase) to AgentLang entity schema (snake_case)
@@ -814,9 +767,6 @@ async function getAndProcessRecords(resolver, entityType) {
         if (result && result.results && Array.isArray(result.results)) {
             for (let i = 0; i < result.results.length; ++i) {
                 const record = result.results[i];
-                console.log(
-                    `HUBSPOT RESOLVER: Processing ${entityType} ${record.id}`,
-                );
 
                 // Create instance for subscription
                 const inst = {
@@ -837,27 +787,22 @@ async function getAndProcessRecords(resolver, entityType) {
 }
 
 async function handleSubsContacts(resolver) {
-    console.log("HUBSPOT RESOLVER: Fetching contacts for subscription...");
     await getAndProcessRecords(resolver, "contacts");
 }
 
 async function handleSubsCompanies(resolver) {
-    console.log("HUBSPOT RESOLVER: Fetching companies for subscription...");
     await getAndProcessRecords(resolver, "companies");
 }
 
 async function handleSubsDeals(resolver) {
-    console.log("HUBSPOT RESOLVER: Fetching deals for subscription...");
     await getAndProcessRecords(resolver, "deals");
 }
 
 async function handleSubsOwners(resolver) {
-    console.log("HUBSPOT RESOLVER: Fetching owners for subscription...");
     await getAndProcessRecords(resolver, "owners");
 }
 
 async function handleSubsTasks(resolver) {
-    console.log("HUBSPOT RESOLVER: Fetching tasks for subscription...");
     await getAndProcessRecords(resolver, "tasks");
 }
 
@@ -866,9 +811,6 @@ export async function subsContacts(resolver) {
     const intervalMinutes =
         parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
     const intervalMs = intervalMinutes * 60 * 1000;
-    console.log(
-        `HUBSPOT RESOLVER: Setting contacts polling interval to ${intervalMinutes} minutes`,
-    );
     setInterval(async () => {
         await handleSubsContacts(resolver);
     }, intervalMs);
@@ -879,9 +821,6 @@ export async function subsCompanies(resolver) {
     const intervalMinutes =
         parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
     const intervalMs = intervalMinutes * 60 * 1000;
-    console.log(
-        `HUBSPOT RESOLVER: Setting companies polling interval to ${intervalMinutes} minutes`,
-    );
     setInterval(async () => {
         await handleSubsCompanies(resolver);
     }, intervalMs);
@@ -892,9 +831,6 @@ export async function subsDeals(resolver) {
     const intervalMinutes =
         parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
     const intervalMs = intervalMinutes * 60 * 1000;
-    console.log(
-        `HUBSPOT RESOLVER: Setting deals polling interval to ${intervalMinutes} minutes`,
-    );
     setInterval(async () => {
         await handleSubsDeals(resolver);
     }, intervalMs);
@@ -905,9 +841,6 @@ export async function subsOwners(resolver) {
     const intervalMinutes =
         parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
     const intervalMs = intervalMinutes * 60 * 1000;
-    console.log(
-        `HUBSPOT RESOLVER: Setting owners polling interval to ${intervalMinutes} minutes`,
-    );
     setInterval(async () => {
         await handleSubsOwners(resolver);
     }, intervalMs);
@@ -918,9 +851,6 @@ export async function subsTasks(resolver) {
     const intervalMinutes =
         parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
     const intervalMs = intervalMinutes * 60 * 1000;
-    console.log(
-        `HUBSPOT RESOLVER: Setting tasks polling interval to ${intervalMinutes} minutes`,
-    );
     setInterval(async () => {
         await handleSubsTasks(resolver);
     }, intervalMs);
@@ -974,9 +904,6 @@ const createMeetingAssociation = async (
 
     try {
         await makePutRequest(endpoint);
-        console.log(
-            `HUBSPOT RESOLVER: Successfully created association: Meeting ${meetingId} -> ${toObjectType} ${toObjectId}`,
-        );
         return { result: "success" };
     } catch (error) {
         console.error(
@@ -1094,9 +1021,6 @@ const removeMeetingAssociation = async (
 
     try {
         await makeDeleteRequest(endpoint);
-        console.log(
-            `HUBSPOT RESOLVER: Successfully removed association: Meeting ${meetingId} -> ${toObjectType} ${toObjectId}`,
-        );
         return { result: "success" };
     } catch (error) {
         console.error(
@@ -1134,8 +1058,6 @@ const isoToUnixMs = (isoDate) => {
 
 // Meeting functions
 export const createMeeting = async (env, attributes) => {
-    console.log("========== HUBSPOT RESOLVER: createMeeting called ==========");
-    console.log("HUBSPOT RESOLVER: All attributes:", Array.from(attributes.attributes.entries()));
 
     // Get the meeting date (could be ISO 8601 or already Unix milliseconds)
     const meetingDate = attributes.attributes.get("meeting_date");
@@ -1185,15 +1107,6 @@ export const createMeeting = async (env, attributes) => {
         // Default to 1 hour meeting duration
         calculatedEndTime = String(parseInt(calculatedStartTime) + 3600000);
     }
-
-    console.log("HUBSPOT RESOLVER: Meeting time calculation:");
-    console.log("  - Input meeting_date:", meetingDate);
-    console.log("  - Input timestamp:", timestamp);
-    console.log("  - Input start_time:", startTime);
-    console.log("  - Input end_time:", endTime);
-    console.log("  - Calculated timestamp:", calculatedTimestamp);
-    console.log("  - Calculated start_time:", calculatedStartTime);
-    console.log("  - Calculated end_time:", calculatedEndTime);
 
     // Build properties object, filtering out undefined/null values
     const rawProperties = {
@@ -1258,15 +1171,6 @@ export const createMeeting = async (env, attributes) => {
             "associated_companies",
         );
         const associatedDeals = attributes.attributes.get("associated_deals");
-
-        console.log("HUBSPOT RESOLVER: Meeting creation attributes:");
-        console.log(
-            "  - Properties being sent:",
-            JSON.stringify(properties, null, 2),
-        );
-        console.log("  - associated_contacts:", associatedContacts);
-        console.log("  - associated_companies:", associatedCompanies);
-        console.log("  - associated_deals:", associatedDeals);
 
         const associations = [];
 
@@ -1342,34 +1246,16 @@ export const createMeeting = async (env, attributes) => {
         // Add associations array to the request if any associations were specified
         if (associations.length > 0) {
             data.associations = associations;
-            console.log(
-                `HUBSPOT RESOLVER: Creating meeting with ${associations.length} associations`,
-            );
         }
 
         const result = await makePostRequest("/crm/v3/objects/meetings", data);
         const meetingId = result.id;
 
-        console.log(
-            `HUBSPOT RESOLVER: Successfully created meeting ${meetingId}${associations.length > 0 ? ` with ${associations.length} associations` : ""}`,
-        );
-        console.log(
-            "HUBSPOT RESOLVER: Full meeting creation response:",
-            JSON.stringify(result, null, 2),
-        );
-
         // Verify associations were created
         if (associations.length > 0) {
-            console.log(
-                "HUBSPOT RESOLVER: Verifying associations were created...",
-            );
             try {
                 const verifyResult = await makeGetRequest(
                     `/crm/v3/objects/meetings/${meetingId}/associations/contacts`,
-                );
-                console.log(
-                    "HUBSPOT RESOLVER: Meeting associations verification:",
-                    JSON.stringify(verifyResult, null, 2),
                 );
             } catch (verifyError) {
                 console.error(
@@ -1379,8 +1265,6 @@ export const createMeeting = async (env, attributes) => {
             }
         }
 
-        console.log("HUBSPOT RESOLVER: Successfully created meeting with ID:", meetingId);
-        console.log("HUBSPOT RESOLVER: Returning success result");
         return { result: "success", id: meetingId };
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create meeting: ${error}`);
@@ -1450,7 +1334,6 @@ export const deleteMeeting = async (env, attributes) => {
 };
 
 async function handleSubsMeetings(resolver) {
-    console.log("HUBSPOT RESOLVER: Fetching meetings for subscription...");
     await getAndProcessRecords(resolver, "meetings");
 }
 
@@ -1459,9 +1342,6 @@ export async function subsMeetings(resolver) {
     const intervalMinutes =
         parseInt(getLocalEnv("HUBSPOT_POLL_INTERVAL_MINUTES")) || 15;
     const intervalMs = intervalMinutes * 60 * 1000;
-    console.log(
-        `HUBSPOT RESOLVER: Setting meetings polling interval to ${intervalMinutes} minutes`,
-    );
     setInterval(async () => {
         await handleSubsMeetings(resolver);
     }, intervalMs);
