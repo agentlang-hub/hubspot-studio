@@ -399,12 +399,17 @@ event updateCRMFromLead {
 }
 
 workflow updateCRMFromLead {
-    console.log("🔄 HUBSPOT: updateCRMFromLead started");
+    console.log("🔄 HUBSPOT: updateCRMFromLead workflow started");
+    console.log("🔄 HUBSPOT: Received event parameters:");
     console.log("  shouldCreateCompany: " + updateCRMFromLead.shouldCreateCompany);
     console.log("  shouldCreateContact: " + updateCRMFromLead.shouldCreateContact);
     console.log("  shouldCreateDeal: " + updateCRMFromLead.shouldCreateDeal);
     console.log("  contactEmail: " + updateCRMFromLead.contactEmail);
+    console.log("  contactFirstName: " + updateCRMFromLead.contactFirstName);
+    console.log("  contactLastName: " + updateCRMFromLead.contactLastName);
+    console.log("  companyName: " + updateCRMFromLead.companyName);
     console.log("  companyDomain: " + updateCRMFromLead.companyDomain);
+    console.log("  ownerId: " + updateCRMFromLead.ownerId);
     
     "" @as companyId;
     "" @as companyName;
