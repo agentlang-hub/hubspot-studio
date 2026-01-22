@@ -826,17 +826,73 @@ const parseTimestamp = (timestamp) => {
     if (!timestamp) return null;
     
     // Check if it's a malformed timestamp like "2026-01-22T14:26:14.352Z86400000"
-    // This happens when now() returns ISO string and gets concatenated with a number
+    // or "2026-01-22T15:04:56.865Z1728000003600000" (multiple concatenations)
+    // This happens when now() returns ISO string and gets concatenated with numbers
     if (typeof timestamp === 'string' && timestamp.includes('T') && timestamp.match(/Z\d+$/)) {
         // Extract the ISO date part and the numeric offset
         const match = timestamp.match(/^(.+Z)(\d+)$/);
         if (match) {
             const isoDate = match[1];
-            const offset = parseInt(match[2]);
-            const baseTime = new Date(isoDate).getTime();
-            const result = String(baseTime + offset);
-            console.log(`HUBSPOT RESOLVER: Fixed malformed timestamp ${timestamp} -> ISO: ${isoDate}, offset: ${offset}ms -> ${result}`);
-            return result;
+            let offsetStr = match[2];
+            
+            // Check if this looks like multiple offsets concatenated
+            // Common patterns: 86400000 (1 day), 172800000 (2 days), 3600000 (1 hour)
+            // If the offset is suspiciously large (> 1 year = 31536000000), try to parse it
+            const fullOffset = parseInt(offsetStr);
+            
+            if (fullOffset > 31536000000) {
+                // Likely multiple concatenations. Try to split it intelligently.
+                // Common offset values are 7-8 digits (hours to days)
+                // Try to find where one offset ends and another begins
+                let parsedOffset = 0;
+                let remaining = offsetStr;
+                
+                console.log(`HUBSPOT RESOLVER: Large offset detected (${fullOffset}), attempting to parse as multiple concatenations`);
+                
+                // Try to extract known offset patterns from left to right
+                const knownOffsets = [
+                    172800000,  // 2 days
+                    86400000,   // 1 day
+                    3600000,    // 1 hour
+                    1800000,    // 30 min
+                    900000,     // 15 min
+                ];
+                
+                while (remaining.length > 0) {
+                    let matched = false;
+                    for (const knownOffset of knownOffsets) {
+                        const offsetStr = String(knownOffset);
+                        if (remaining.startsWith(offsetStr)) {
+                            parsedOffset += knownOffset;
+                            remaining = remaining.substring(offsetStr.length);
+                            matched = true;
+                            console.log(`HUBSPOT RESOLVER: Extracted ${offsetStr} (${knownOffset}ms), remaining: "${remaining}"`);
+                            break;
+                        }
+                    }
+                    
+                    if (!matched) {
+                        // Can't parse further, add whatever's left as a single number
+                        if (remaining.length > 0) {
+                            const leftover = parseInt(remaining);
+                            console.log(`HUBSPOT RESOLVER: Adding remaining ${remaining} (${leftover}ms)`);
+                            parsedOffset += leftover;
+                        }
+                        break;
+                    }
+                }
+                
+                const baseTime = new Date(isoDate).getTime();
+                const result = String(baseTime + parsedOffset);
+                console.log(`HUBSPOT RESOLVER: Fixed malformed timestamp ${timestamp} -> ISO: ${isoDate}, parsed offset: ${parsedOffset}ms -> ${result}`);
+                return result;
+            } else {
+                // Normal single offset
+                const baseTime = new Date(isoDate).getTime();
+                const result = String(baseTime + fullOffset);
+                console.log(`HUBSPOT RESOLVER: Fixed malformed timestamp ${timestamp} -> ISO: ${isoDate}, offset: ${fullOffset}ms -> ${result}`);
+                return result;
+            }
         }
     }
     
