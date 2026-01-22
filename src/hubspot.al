@@ -480,7 +480,7 @@ event updateCRMFromLead {
 }
 
 workflow updateCRMFromLead {
-    if (updateCRMFromLead.leadStage == "QUALIFIED") {
+    if (true) {
         "salesqualifiedlead" @as lifecycle
     } else if (updateCRMFromLead.leadStage == "ENGAGED") {
         "marketingqualifiedlead" @as lifecycle
@@ -598,7 +598,7 @@ workflow updateCRMFromLead {
                     associated_contacts [contact.id]
                 }} @as task;
                 
-                if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                if (true) {
                     {Meeting {
                         meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                         meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -720,7 +720,7 @@ workflow updateCRMFromLead {
                         associated_contacts [contact.id]
                     }} @as task;
                     
-                    if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                    if (true) {
                         {Meeting {
                             meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                             meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -845,7 +845,7 @@ workflow updateCRMFromLead {
                         associated_contacts [contact.id]
                     }} @as task;
                     
-                    if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                    if (true) {
                         {Meeting {
                             meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                             meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -974,7 +974,7 @@ workflow updateCRMFromLead {
                         associated_contacts [contact.id]
                     }} @as task;
                     
-                    if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                    if (true) {
                         {Meeting {
                             meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                             meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -1096,7 +1096,7 @@ workflow updateCRMFromLead {
                             associated_contacts [contact.id]
                         }} @as task;
                         
-                        if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                        if (true) {
                             {Meeting {
                                 meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                                 meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -1221,7 +1221,7 @@ workflow updateCRMFromLead {
                             associated_contacts [contact.id]
                         }} @as task;
                         
-                        if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                        if (true) {
                             {Meeting {
                                 meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                                 meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -1343,7 +1343,7 @@ workflow updateCRMFromLead {
                         associated_contacts [contact.id]
                     }} @as task;
                     
-                    if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                    if (true) {
                         {Meeting {
                             meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                             meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -1458,7 +1458,7 @@ workflow updateCRMFromLead {
                             associated_contacts [contact.id]
                         }} @as task;
                         
-                        if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                        if (true) {
                             {Meeting {
                                 meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                                 meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
@@ -1576,7 +1576,7 @@ workflow updateCRMFromLead {
                             associated_contacts [contact.id]
                         }} @as task;
                         
-                        if (updateCRMFromLead.leadStage == "QUALIFIED") {
+                        if (true) {
                             {Meeting {
                                 meeting_title "Follow-up Discussion: " + updateCRMFromLead.nextAction,
                                 meeting_body "Lead Stage: " + updateCRMFromLead.leadStage + " (Score: " + updateCRMFromLead.leadScore + ")\n\nDiscussion Points:\n- " + updateCRMFromLead.nextAction + "\n\nBackground:\n" + updateCRMFromLead.reasoning,
