@@ -1466,26 +1466,34 @@ export const createNote = async (env, attributes) => {
         // Associate with contacts
         if (associatedContacts) {
             const contactIds = Array.isArray(associatedContacts) ? associatedContacts : [associatedContacts];
+            console.log("HUBSPOT RESOLVER: Processing contact associations:", contactIds);
             contactIds.forEach(contactId => {
-                if (contactId) {
+                if (contactId && contactId !== "" && contactId !== null) {
+                    console.log("HUBSPOT RESOLVER: Adding contact association:", contactId);
                     associations.push({
                         to: { id: contactId },
                         types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 202 }]
                     });
+                } else {
+                    console.log("HUBSPOT RESOLVER: Skipping invalid contact ID:", contactId);
                 }
             });
         }
 
         // Associate with company
-        if (associatedCompany) {
+        if (associatedCompany && associatedCompany !== "" && associatedCompany !== null) {
+            console.log("HUBSPOT RESOLVER: Adding company association:", associatedCompany);
             associations.push({
                 to: { id: associatedCompany },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 190 }]
             });
+        } else {
+            console.log("HUBSPOT RESOLVER: Skipping company association (no valid company ID)");
         }
 
         // Associate with deal
-        if (associatedDeal) {
+        if (associatedDeal && associatedDeal !== "" && associatedDeal !== null) {
+            console.log("HUBSPOT RESOLVER: Adding deal association:", associatedDeal);
             associations.push({
                 to: { id: associatedDeal },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 214 }]
@@ -1495,12 +1503,23 @@ export const createNote = async (env, attributes) => {
         // Create associations if any
         if (associations.length > 0) {
             console.log("HUBSPOT RESOLVER: Creating note associations:", associations.length);
-            await makePutRequest(`/crm/v3/objects/notes/${result.id}/associations`, { inputs: associations });
+            console.log("HUBSPOT RESOLVER: Association details:", JSON.stringify(associations, null, 2));
+            try {
+                await makePutRequest(`/crm/v3/objects/notes/${result.id}/associations`, { inputs: associations });
+                console.log("HUBSPOT RESOLVER: Note associations created successfully");
+            } catch (assocError) {
+                console.error("HUBSPOT RESOLVER: Failed to create note associations:", assocError);
+                console.error("HUBSPOT RESOLVER: Note was created (ID: " + result.id + ") but associations failed");
+                // Return success anyway since the note was created
+            }
+        } else {
+            console.log("HUBSPOT RESOLVER: No associations to create for note");
         }
 
         return { result: "success", id: result.id };
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create note: ${error}`);
+        console.error(`HUBSPOT RESOLVER: Error stack:`, error.stack);
         return { result: "error", message: error.message };
     }
 };

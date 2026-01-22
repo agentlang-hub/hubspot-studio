@@ -452,6 +452,10 @@ workflow updateCRMFromLead {
             updateCRMFromLead.existingCompanyId @as companyId;
             updateCRMFromLead.companyName @as companyName;
             console.log("🏢 HUBSPOT: Using existing company ID: " + companyId)
+        } else {
+            nil @as companyId;
+            "" @as companyName;
+            console.log("🏢 HUBSPOT: No company ID available (neither created nor existing)")
         }
     };
 
