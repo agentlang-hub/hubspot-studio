@@ -13,6 +13,16 @@ function transformFromHubSpot(hubspotData, entityType) {
         Object.entries(fieldMapping).map(([k, v]) => [v, k])
     );
     
+    // Fields to skip (HubSpot internal fields that aren't in our entity schema)
+    const skipFields = [
+        'createdate', 'hs_object_id', 'lastmodifieddate', 
+        'hs_lastmodifieddate', 'hs_createdate', 'hs_all_contact_vids',
+        'hs_all_owner_ids', 'hs_all_team_ids', 'hs_all_accessible_team_ids',
+        'hs_calculated_form_submissions', 'hs_is_contact', 'hs_is_unworked',
+        'hs_marketable_status', 'hs_marketable_reason_id', 'hs_marketable_reason_type',
+        'hs_additional_emails', 'hs_all_assigned_business_unit_ids'
+    ];
+    
     const transformed = {
         id: hubspotData.id,
     };
@@ -20,6 +30,11 @@ function transformFromHubSpot(hubspotData, entityType) {
     // Flatten properties and reverse map field names
     if (hubspotData.properties) {
         for (const [hubspotKey, value] of Object.entries(hubspotData.properties)) {
+            // Skip internal HubSpot fields
+            if (skipFields.includes(hubspotKey)) {
+                continue;
+            }
+            
             // Use reverse mapping if available, otherwise use the key as-is
             const agentlangKey = reverseMapping[hubspotKey] || hubspotKey;
             if (value !== null && value !== undefined) {
@@ -200,7 +215,19 @@ async function queryWithFilters(objectType, entityType, attrs) {
         }
 
         return inst.map((data) => {
-            return asInstance(data, entityType);
+            try {
+                return asInstance(data, entityType);
+            } catch (error) {
+                console.error(
+                    `HUBSPOT RESOLVER: Failed to transform ${objectType} instance:`,
+                    error.message
+                );
+                console.error(
+                    `HUBSPOT RESOLVER: HubSpot data keys:`,
+                    Object.keys(data.properties || {})
+                );
+                throw error;
+            }
         });
     } catch (error) {
         console.error(
