@@ -23,7 +23,6 @@ function transformFromHubSpot(hubspotData, entityType) {
         'hs_additional_emails', 'hs_all_assigned_business_unit_ids'
     ];
     
-    console.log(
         `HUBSPOT RESOLVER: Transforming ${entityType} - HubSpot ID: ${hubspotData.id}`
     );
     
@@ -61,7 +60,6 @@ function asInstance(entity, entityType) {
     
     // Debug log for Contact entities
     if (entityType === "Contact") {
-        console.log(
             `HUBSPOT RESOLVER: Transformed Contact - id: ${transformed.id}, email: ${transformed.email}`
         );
     }
@@ -165,7 +163,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
 
         // Case 1: Query by ID using direct GET endpoint
         if (id) {
-            console.log(
                 `HUBSPOT RESOLVER: Querying ${objectType} by ID using direct GET: ${id}`
             );
             inst = await makeGetRequest(`/crm/v3/objects/${objectType}/${id}`);
@@ -190,7 +187,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
                     // Skip 'id' field - HubSpot doesn't support filtering by id in Search API
                     // IDs should be queried using the direct GET endpoint instead
                     if (key === "id") {
-                        console.log(
                             `HUBSPOT RESOLVER: Skipping 'id' filter - use direct GET /crm/v3/objects/${objectType}/{id} instead`
                         );
                         continue;
@@ -220,7 +216,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
                     limit: 100,
                 };
 
-                console.log(
                     `HUBSPOT RESOLVER: Querying ${objectType} with filters:`,
                     JSON.stringify(filters),
                 );
@@ -229,7 +224,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
                     searchBody,
                 );
                 inst = result.results || [];
-                console.log(
                     `HUBSPOT RESOLVER: Query returned ${inst.length} ${objectType} results`,
                 );
             }
@@ -242,7 +236,6 @@ async function queryWithFilters(objectType, entityType, attrs) {
                     `/crm/v3/objects/${objectType}`,
                 );
                 inst = result.results || [];
-                console.log(
                     `HUBSPOT RESOLVER: No filters provided, returned all ${inst.length} ${objectType}`,
                 );
             } else {
@@ -252,11 +245,9 @@ async function queryWithFilters(objectType, entityType, attrs) {
                                        attrs.queryAttributeValues.has("id");
                 
                 if (hasOnlyIdFilter) {
-                    console.log(
                         `HUBSPOT RESOLVER: Query by ID requested but ID was null/empty, returning empty array`,
                     );
                 } else {
-                    console.log(
                         `HUBSPOT RESOLVER: All query filters were null/empty/invalid, returning empty array to prevent fetching all ${objectType}`,
                     );
                 }
@@ -454,12 +445,10 @@ export const createContact = async (env, attributes) => {
     try {
         const result = await makePostRequest("/crm/v3/objects/contacts", data);
         const contactId = result.id;
-        console.log(`HUBSPOT RESOLVER: Contact created successfully, ID: ${contactId}`);
 
         // Handle company association
         const companyId = attributes.attributes.get("company");
         if (companyId && companyId !== "" && companyId !== null) {
-            console.log(`HUBSPOT RESOLVER: Associating contact ${contactId} with company ${companyId}`);
             try {
                 // Use v4 batch association API to associate contact with company
                 const associations = [{
@@ -468,7 +457,6 @@ export const createContact = async (env, attributes) => {
                     types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 280 }]
                 }];
                 await makePostRequest(`/crm/v4/associations/contacts/companies/batch/create`, { inputs: associations });
-                console.log("HUBSPOT RESOLVER: Contact-company association created successfully");
             } catch (assocError) {
                 console.error("HUBSPOT RESOLVER: Failed to associate contact with company:", assocError);
                 console.error("HUBSPOT RESOLVER: Contact was created (ID: " + contactId + ") but company association failed");
@@ -650,7 +638,6 @@ export const createDeal = async (env, attributes) => {
     try {
         const result = await makePostRequest("/crm/v3/objects/deals", data);
         const dealId = result.id;
-        console.log(`HUBSPOT RESOLVER: Deal created successfully, ID: ${dealId}`);
 
         // Handle associations
         const associatedContacts = attributes.attributes.get("associated_contacts");
@@ -661,10 +648,8 @@ export const createDeal = async (env, attributes) => {
         // Associate with contacts
         if (associatedContacts) {
             const contactIds = Array.isArray(associatedContacts) ? associatedContacts : [associatedContacts];
-            console.log("HUBSPOT RESOLVER: Processing deal contact associations:", contactIds);
             contactIds.forEach(contactId => {
                 if (contactId && contactId !== "" && contactId !== null) {
-                    console.log("HUBSPOT RESOLVER: Adding contact association:", contactId);
                     associations.push({
                         to: { id: contactId },
                         types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 4 }]
@@ -675,7 +660,6 @@ export const createDeal = async (env, attributes) => {
 
         // Associate with company
         if (associatedCompany && associatedCompany !== "" && associatedCompany !== null) {
-            console.log("HUBSPOT RESOLVER: Adding company association:", associatedCompany);
             associations.push({
                 to: { id: associatedCompany },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 342 }]
@@ -684,7 +668,6 @@ export const createDeal = async (env, attributes) => {
 
         // Create associations if any using v4 batch API
         if (associations.length > 0) {
-            console.log("HUBSPOT RESOLVER: Creating deal associations:", associations.length);
             
             // Group associations by target object type for batch creation
             const contactAssocs = associations.filter(a => a.types[0].associationTypeId === 4);
@@ -699,7 +682,6 @@ export const createDeal = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/deals/contacts/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Deal contact associations created successfully");
                 }
                 
                 // Create company associations
@@ -710,7 +692,6 @@ export const createDeal = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/deals/companies/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Deal company associations created successfully");
                 }
             } catch (assocError) {
                 console.error("HUBSPOT RESOLVER: Failed to create deal associations:", assocError);
@@ -917,7 +898,6 @@ const parseTimestamp = (timestamp) => {
                 let parsedOffset = 0;
                 let remaining = offsetStr;
                 
-                console.log(`HUBSPOT RESOLVER: Large offset detected (${fullOffset}), attempting to parse as multiple concatenations`);
                 
                 // Try to extract known offset patterns from left to right
                 const knownOffsets = [
@@ -936,7 +916,6 @@ const parseTimestamp = (timestamp) => {
                             parsedOffset += knownOffset;
                             remaining = remaining.substring(offsetStr.length);
                             matched = true;
-                            console.log(`HUBSPOT RESOLVER: Extracted ${offsetStr} (${knownOffset}ms), remaining: "${remaining}"`);
                             break;
                         }
                     }
@@ -945,7 +924,6 @@ const parseTimestamp = (timestamp) => {
                         // Can't parse further, add whatever's left as a single number
                         if (remaining.length > 0) {
                             const leftover = parseInt(remaining);
-                            console.log(`HUBSPOT RESOLVER: Adding remaining ${remaining} (${leftover}ms)`);
                             parsedOffset += leftover;
                         }
                         break;
@@ -954,13 +932,11 @@ const parseTimestamp = (timestamp) => {
                 
                 const baseTime = new Date(isoDate).getTime();
                 const result = String(baseTime + parsedOffset);
-                console.log(`HUBSPOT RESOLVER: Fixed malformed timestamp ${timestamp} -> ISO: ${isoDate}, parsed offset: ${parsedOffset}ms -> ${result}`);
                 return result;
             } else {
                 // Normal single offset
                 const baseTime = new Date(isoDate).getTime();
                 const result = String(baseTime + fullOffset);
-                console.log(`HUBSPOT RESOLVER: Fixed malformed timestamp ${timestamp} -> ISO: ${isoDate}, offset: ${fullOffset}ms -> ${result}`);
                 return result;
             }
         }
@@ -982,7 +958,6 @@ export const createTask = async (env, attributes) => {
     const convertedTimestamp = parseTimestamp(timestamp);
     
     if (timestamp && convertedTimestamp !== timestamp) {
-        console.log(`HUBSPOT RESOLVER: Converted timestamp from ${timestamp} to Unix ms ${convertedTimestamp}`);
     }
     
     const data = {
@@ -1000,7 +975,6 @@ export const createTask = async (env, attributes) => {
     try {
         const result = await makePostRequest("/crm/v3/objects/tasks", data);
         const taskId = result.id;
-        console.log(`HUBSPOT RESOLVER: Task created successfully, ID: ${taskId}`);
 
         // Handle associations
         const associatedContacts = attributes.attributes.get("associated_contacts");
@@ -1012,10 +986,8 @@ export const createTask = async (env, attributes) => {
         // Associate with contacts
         if (associatedContacts) {
             const contactIds = Array.isArray(associatedContacts) ? associatedContacts : [associatedContacts];
-            console.log("HUBSPOT RESOLVER: Processing task contact associations:", contactIds);
             contactIds.forEach(contactId => {
                 if (contactId && contactId !== "" && contactId !== null) {
-                    console.log("HUBSPOT RESOLVER: Adding contact association:", contactId);
                     associations.push({
                         to: { id: contactId },
                         types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 204 }]
@@ -1026,7 +998,6 @@ export const createTask = async (env, attributes) => {
 
         // Associate with company
         if (associatedCompany && associatedCompany !== "" && associatedCompany !== null) {
-            console.log("HUBSPOT RESOLVER: Adding company association:", associatedCompany);
             associations.push({
                 to: { id: associatedCompany },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 192 }]
@@ -1035,7 +1006,6 @@ export const createTask = async (env, attributes) => {
 
         // Associate with deal
         if (associatedDeal && associatedDeal !== "" && associatedDeal !== null) {
-            console.log("HUBSPOT RESOLVER: Adding deal association:", associatedDeal);
             associations.push({
                 to: { id: associatedDeal },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 216 }]
@@ -1044,7 +1014,6 @@ export const createTask = async (env, attributes) => {
 
         // Create associations if any using v4 batch API
         if (associations.length > 0) {
-            console.log("HUBSPOT RESOLVER: Creating task associations:", associations.length);
             
             // Group associations by target object type for batch creation
             const contactAssocs = associations.filter(a => a.types[0].associationTypeId === 204);
@@ -1060,7 +1029,6 @@ export const createTask = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/tasks/contacts/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Task contact associations created successfully");
                 }
                 
                 // Create company associations
@@ -1071,7 +1039,6 @@ export const createTask = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/tasks/companies/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Task company associations created successfully");
                 }
                 
                 // Create deal associations
@@ -1082,7 +1049,6 @@ export const createTask = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/tasks/deals/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Task deal associations created successfully");
                 }
             } catch (assocError) {
                 console.error("HUBSPOT RESOLVER: Failed to create task associations:", assocError);
@@ -1843,16 +1809,11 @@ export const getMeetingAssociationsResolver = async (env, attributes) => {
 // ============================================================================
 
 export const createNote = async (env, attributes) => {
-    console.log("========== HUBSPOT RESOLVER: createNote called ==========");
-    console.log("HUBSPOT RESOLVER: All attributes:", [...attributes.attributes.entries()]);
 
     const noteBody = attributes.attributes.get("note_body");
     const timestamp = attributes.attributes.get("timestamp") || new Date().toISOString();
     const ownerId = attributes.attributes.get("owner");
 
-    console.log("HUBSPOT RESOLVER: note_body length:", noteBody ? noteBody.length : 0);
-    console.log("HUBSPOT RESOLVER: timestamp:", timestamp);
-    console.log("HUBSPOT RESOLVER: owner:", ownerId);
 
     const properties = {
         hs_note_body: noteBody,
@@ -1862,19 +1823,14 @@ export const createNote = async (env, attributes) => {
     // Only add owner if it's not empty
     if (ownerId && ownerId !== "" && ownerId !== null) {
         properties.hubspot_owner_id = ownerId;
-        console.log("HUBSPOT RESOLVER: Including owner ID:", ownerId);
     } else {
-        console.log("HUBSPOT RESOLVER: No owner ID provided, skipping");
     }
 
     const data = { properties };
 
-    console.log("HUBSPOT RESOLVER: Note creation request:", JSON.stringify(data, null, 2));
-    console.log("HUBSPOT RESOLVER: Creating in HubSpot: /crm/v3/objects/notes");
 
     try {
         const result = await makePostRequest("/crm/v3/objects/notes", data);
-        console.log("HUBSPOT RESOLVER: Note created successfully, ID:", result.id);
 
         // Handle associations
         const associatedContacts = attributes.attributes.get("associated_contacts");
@@ -1886,34 +1842,28 @@ export const createNote = async (env, attributes) => {
         // Associate with contacts
         if (associatedContacts) {
             const contactIds = Array.isArray(associatedContacts) ? associatedContacts : [associatedContacts];
-            console.log("HUBSPOT RESOLVER: Processing contact associations:", contactIds);
             contactIds.forEach(contactId => {
                 if (contactId && contactId !== "" && contactId !== null) {
-                    console.log("HUBSPOT RESOLVER: Adding contact association:", contactId);
                     associations.push({
                         to: { id: contactId },
                         types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 202 }]
                     });
                 } else {
-                    console.log("HUBSPOT RESOLVER: Skipping invalid contact ID:", contactId);
                 }
             });
         }
 
         // Associate with company
         if (associatedCompany && associatedCompany !== "" && associatedCompany !== null) {
-            console.log("HUBSPOT RESOLVER: Adding company association:", associatedCompany);
             associations.push({
                 to: { id: associatedCompany },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 190 }]
             });
         } else {
-            console.log("HUBSPOT RESOLVER: Skipping company association (no valid company ID)");
         }
 
         // Associate with deal
         if (associatedDeal && associatedDeal !== "" && associatedDeal !== null) {
-            console.log("HUBSPOT RESOLVER: Adding deal association:", associatedDeal);
             associations.push({
                 to: { id: associatedDeal },
                 types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 214 }]
@@ -1922,8 +1872,6 @@ export const createNote = async (env, attributes) => {
 
         // Create associations if any using v4 batch API
         if (associations.length > 0) {
-            console.log("HUBSPOT RESOLVER: Creating note associations:", associations.length);
-            console.log("HUBSPOT RESOLVER: Association details:", JSON.stringify(associations, null, 2));
             
             // Group associations by target object type for batch creation
             const contactAssocs = associations.filter(a => a.types[0].associationTypeId === 202);
@@ -1939,7 +1887,6 @@ export const createNote = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/notes/contacts/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Contact associations created successfully");
                 }
                 
                 // Create company associations
@@ -1950,7 +1897,6 @@ export const createNote = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/notes/companies/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Company associations created successfully");
                 }
                 
                 // Create deal associations
@@ -1961,7 +1907,6 @@ export const createNote = async (env, attributes) => {
                         types: assoc.types
                     }));
                     await makePostRequest(`/crm/v4/associations/notes/deals/batch/create`, { inputs });
-                    console.log("HUBSPOT RESOLVER: Deal associations created successfully");
                 }
             } catch (assocError) {
                 console.error("HUBSPOT RESOLVER: Failed to create note associations:", assocError);
@@ -1969,7 +1914,6 @@ export const createNote = async (env, attributes) => {
                 // Return success anyway since the note was created
             }
         } else {
-            console.log("HUBSPOT RESOLVER: No associations to create for note");
         }
 
         return { result: "success", id: result.id };

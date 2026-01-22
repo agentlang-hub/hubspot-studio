@@ -363,22 +363,18 @@ event upsertCompany {
 }
 
 workflow upsertCompany {
-    console.log("🏢 HUBSPOT: upsertCompany called with domain: " + upsertCompany.domain + ", name: " + upsertCompany.name);
     
     // Check if both domain and name are empty/null - if so, skip company operations
     if ((upsertCompany.domain == "") and (upsertCompany.name == "")) {
-        console.log("🏢 HUBSPOT: Skipping company upsert - both domain and name are empty");
         // Return empty result - AgentLang will handle this gracefully
         nil
     } else {
         {Company {domain? upsertCompany.domain}} @as companies;
         
-        console.log("🏢 HUBSPOT: Query returned " + companies.length + " companies");
         
         if (companies.length > 0) {
             companies @as [company];
             
-            console.log("🏢 HUBSPOT: Updating existing company ID: " + company.id);
             
             {Company {
                 id? company.id,
@@ -386,10 +382,8 @@ workflow upsertCompany {
                 ai_lead_score upsertCompany.ai_lead_score
             }} @as result;
             
-            console.log("🏢 HUBSPOT: Company updated, ID: " + result.id);
             result
         } else {
-            console.log("🏢 HUBSPOT: Creating new company");
             
             {Company {
                 domain upsertCompany.domain,
@@ -398,7 +392,6 @@ workflow upsertCompany {
                 ai_lead_score upsertCompany.ai_lead_score
             }} @as result;
             
-            console.log("🏢 HUBSPOT: Company created, ID: " + result.id);
             result
         }
     }
@@ -412,28 +405,14 @@ event upsertContact {
 }
 
 workflow upsertContact {
-    console.log("👤 HUBSPOT: upsertContact workflow executing");
-    console.log("👤 HUBSPOT: Received parameters:");
-    console.log("  - email parameter value: " + upsertContact.email);
-    console.log("  - first_name parameter value: " + upsertContact.first_name);
-    console.log("  - last_name parameter value: " + upsertContact.last_name);
-    console.log("  - company parameter value: " + upsertContact.company);
-    console.log("👤 HUBSPOT: About to query Contact with email filter");
     
     {Contact {email? upsertContact.email}} @as contacts;
     
-    console.log("👤 HUBSPOT: Query completed, returned " + contacts.length + " contacts" + " and the email is: " + contacts.email);
     
     if (contacts.length > 0) {
         contacts @as [contact];
-        console.log("👤 HUBSPOT: Found existing contact - ID: " + contact.id + ", Email: " + contact.email);
         contact
     } else {
-        console.log("👤 HUBSPOT: No match found, creating new contact");
-        console.log("  email: " + upsertContact.email);
-        console.log("  first_name: " + upsertContact.first_name);
-        console.log("  last_name: " + upsertContact.last_name);
-        console.log("  company: " + upsertContact.company);
         
         {Contact {
             email upsertContact.email,
@@ -442,7 +421,6 @@ workflow upsertContact {
             company upsertContact.company
         }} @as result;
         
-        console.log("👤 HUBSPOT: Contact created, ID: " + result.id);
         result
     }
 }
