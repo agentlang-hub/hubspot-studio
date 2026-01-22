@@ -254,56 +254,54 @@ event fetchCRMContext {
 }
 
 workflow fetchCRMContext {
-
-    if (fetchCRMContext.companyDomain) {
-        {Company {domain? fetchCRMContext.companyDomain}} @as companies;
-        console.log("🔍 HUBSPOT: Company query returned " + companies.length + " results");
+    {Company {domain? fetchCRMContext.companyDomain}} @as companies;
+    console.log("🔍 HUBSPOT: Company query returned " + companies.length + " results");
         
-        if (companies.length > 0) {
-            companies @as [comp];
-            console.log("🏢 HUBSPOT: Found existing company: " + comp.id + ", " + comp.name);
+    if (companies.length > 0) {
+        companies @as [comp];
+        console.log("🏢 HUBSPOT: Found existing company: " + comp.id + ", " + comp.name);
 
-            if (fetchCRMContext.contactEmail) {
-                {Contact {email? fetchCRMContext.contactEmail}} @as [contact];
-                console.log("🔍 HUBSPOT: Contact query returned " + contact.length + " results are: " + contact.email + " and the id is: " + contact.id);
+        {Contact {email? fetchCRMContext.contactEmail}} @as contact;
+        if (contact.length > 0 ) {
+            contact @as [cont];
 
-                {CRMContext {
-                    existingCompanyId "",
-                    existingCompanyName "",
-                    existingContactId contact.id,
-                    hasCompany false,
-                    hasContact true
-                }}
-            } else {
-                {CRMContext {
-                    existingCompanyId comp.id,
-                    existingCompanyName comp.name,
-                    existingContactId "",
-                    hasCompany true,
-                    hasContact false
-                }}
-            }
+            console.log("🔍 HUBSPOT: Contact query returned " + cont.length + " results are: " + cont.email + " and the id is: " + cont.id);
+            {CRMContext {
+                existingCompanyId comp.id,
+                existingCompanyName comp.name,
+                existingContactId cont.id,
+                hasCompany true,
+                hasContact true
+            }}
         } else {
-            if (fetchCRMContext.contactEmail) {
-                {Contact {email? fetchCRMContext.contactEmail}} @as [contact];
-                console.log("🔍 HUBSPOT: Contact query returned " + contact.length + " results are: " + contact.email + " and the id is: " + contact.id);
+            {CRMContext {
+                existingCompanyId comp.id,
+                existingCompanyName comp.name,
+                existingContactId "",
+                hasCompany true,
+                hasContact false
+            }}
+        }
+    } else {
+        if (contact.length > 0 ) {
+            contact @as [cont];
 
-                {CRMContext {
-                    existingCompanyId "",
-                    existingCompanyName "",
-                    existingContactId contact.id,
-                    hasCompany false,
-                    hasContact true
-                }}
-            } else {
-                {CRMContext {
-                    existingCompanyId "",
-                    existingCompanyName "",
-                    existingContactId "",
-                    hasCompany false,
-                    hasContact false
-                }}
-            }
+            console.log("🔍 HUBSPOT: Contact query returned " + cont.length + " results are: " + cont.email + " and the id is: " + cont.id);
+            {CRMContext {
+                existingCompanyId "",
+                existingCompanyName "",
+                existingContactId cont.id,
+                hasCompany false,
+                hasContact true
+            }}
+        } else {
+            {CRMContext {
+                existingCompanyId "",
+                existingCompanyName "",
+                existingContactId "",
+                hasCompany false,
+                hasContact false
+            }}
         }
     }
 }
