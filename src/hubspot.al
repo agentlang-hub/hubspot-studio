@@ -264,7 +264,7 @@ workflow fetchCRMContext {
         {Company {domain? fetchCRMContext.companyDomain}} @as companies;
         
         if (companies.length > 0) {
-            companies @as [comp, __];
+            companies @as [comp];
             comp.id @as existingCompanyId;
             comp.name @as existingCompanyName;
             true @as hasCompany
@@ -275,7 +275,7 @@ workflow fetchCRMContext {
         {Contact {email? fetchCRMContext.contactEmail}} @as contacts;
         
         if (contacts.length > 0) {
-            contacts @as [cont, __];
+            contacts @as [cont];
             cont.id @as existingContactId;
             true @as hasContact
         }
@@ -305,7 +305,7 @@ workflow upsertCompany {
     console.log("🏢 HUBSPOT: Query returned " + companies.length + " companies");
     
     if (companies.length > 0) {
-        companies @as [company, __];
+        companies @as [company];
         
         console.log("🏢 HUBSPOT: Updating existing company ID: " + company.id);
         
@@ -353,7 +353,7 @@ workflow upsertContact {
     console.log("👤 HUBSPOT: Query completed, returned " + contacts.length + " contacts");
     
     if (contacts.length > 0) {
-        contacts @as [contact, __];
+        contacts @as [contact];
         console.log("👤 HUBSPOT: Found existing contact - ID: " + contact.id + ", Email: " + contact.email);
         contact
     } else {
@@ -481,7 +481,7 @@ workflow updateCRMFromLead {
             console.log("👤 HUBSPOT: Fetching existing contact ID: " + updateCRMFromLead.existingContactId);
 
             {Contact {id? updateCRMFromLead.existingContactId}} @as existingContacts;
-            existingContacts @as [contact, __];
+            existingContacts @as [contact];
 
             console.log("👤 HUBSPOT: Fetched existing contact - ID: " + contact.id)
         } else {
