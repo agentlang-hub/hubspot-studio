@@ -150,14 +150,24 @@ const FIELD_MAPPINGS = {
  * @returns {Array} Array of entity instances
  */
 async function queryWithFilters(objectType, entityType, attrs) {
-    const id =
+    // Check for ID in __path__ (REST-style: /contacts/123)
+    const pathId =
         attrs.queryAttributeValues?.get("__path__")?.split("/")?.pop() ?? null;
+    
+    // Check for ID in query attributes (AgentLang-style: {Contact {id? "123"}})
+    const queryId = attrs.queryAttributeValues?.get("id") ?? null;
+    
+    // Use either path ID or query ID
+    const id = pathId || queryId;
 
     try {
         let inst;
 
-        // Case 1: Query by ID
+        // Case 1: Query by ID using direct GET endpoint
         if (id) {
+            console.log(
+                `HUBSPOT RESOLVER: Querying ${objectType} by ID using direct GET: ${id}`
+            );
             inst = await makeGetRequest(`/crm/v3/objects/${objectType}/${id}`);
             if (!(inst instanceof Array)) {
                 inst = [inst];
@@ -237,9 +247,19 @@ async function queryWithFilters(objectType, entityType, attrs) {
                 );
             } else {
                 // Query attributes were provided but all were null/empty/invalid
-                console.log(
-                    `HUBSPOT RESOLVER: All query filters were null/empty/invalid, returning empty array to prevent fetching all ${objectType}`,
-                );
+                // Check if 'id' was the only attribute and it was null/empty
+                const hasOnlyIdFilter = attrs.queryAttributeValues.size === 1 && 
+                                       attrs.queryAttributeValues.has("id");
+                
+                if (hasOnlyIdFilter) {
+                    console.log(
+                        `HUBSPOT RESOLVER: Query by ID requested but ID was null/empty, returning empty array`,
+                    );
+                } else {
+                    console.log(
+                        `HUBSPOT RESOLVER: All query filters were null/empty/invalid, returning empty array to prevent fetching all ${objectType}`,
+                    );
+                }
                 inst = [];
             }
         }
