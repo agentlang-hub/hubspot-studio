@@ -453,7 +453,30 @@ export const createContact = async (env, attributes) => {
 
     try {
         const result = await makePostRequest("/crm/v3/objects/contacts", data);
-        return { result: "success", id: result.id };
+        const contactId = result.id;
+        console.log(`HUBSPOT RESOLVER: Contact created successfully, ID: ${contactId}`);
+
+        // Handle company association
+        const companyId = attributes.attributes.get("company");
+        if (companyId && companyId !== "" && companyId !== null) {
+            console.log(`HUBSPOT RESOLVER: Associating contact ${contactId} with company ${companyId}`);
+            try {
+                // Use v4 batch association API to associate contact with company
+                const associations = [{
+                    from: { id: contactId },
+                    to: { id: companyId },
+                    types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 280 }]
+                }];
+                await makePostRequest(`/crm/v4/associations/contacts/companies/batch/create`, { inputs: associations });
+                console.log("HUBSPOT RESOLVER: Contact-company association created successfully");
+            } catch (assocError) {
+                console.error("HUBSPOT RESOLVER: Failed to associate contact with company:", assocError);
+                console.error("HUBSPOT RESOLVER: Contact was created (ID: " + contactId + ") but company association failed");
+                // Continue anyway - contact is created
+            }
+        }
+
+        return { result: "success", id: contactId };
     } catch (error) {
         console.error(`HUBSPOT RESOLVER: Failed to create contact: ${error}`);
         return { result: "error", message: error.message };
